@@ -393,7 +393,8 @@ jobs:
           $host_ = $env:FTP_HOST; if (-not $host_) { $host_ = '141.8.192.25' }
           $host_ = ($host_ -replace '^[a-zA-Z]+://', '').Trim().TrimEnd('/')
           $user_ = $env:FTP_USER; if (-not $user_) { $user_ = 'a1306338' }
-          $baseUrl = 'ftp://' + $host_ + '/'
+          # Заливаем в папку сайта, а не в корень FTP (корень не виден из интернета).
+          $baseUrl = 'ftp://' + $host_ + '/domains/evgeniymamonov.com/public_html/'
           if (-not $baseUrl.EndsWith('/')) { $baseUrl = $baseUrl + '/' }
           Write-Host ('[i] FTP: ' + $baseUrl + ' (user ' + $user_ + ')')
           function Get-RemoteSize($remote) {
