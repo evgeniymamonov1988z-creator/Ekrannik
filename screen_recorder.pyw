@@ -81,7 +81,7 @@ T = {
         'error_copy': '\U0001f4cb Копировать',
         'error_copied': 'Скопировано!',
         'error_ok': 'OK',
-        'error_main': 'Ошибка при запуска:\n\n{}',
+        'error_main': 'Ошибка при запуске:\n\n{}',
         'error_tkinter': 'Не удалось загрузить tkinter:\n{}\n\nУстановите Python с python.org (не Microsoft Store)',
         'error_copy_btn': '\U0001f4cb Копировать',
         # Демо
@@ -135,7 +135,7 @@ T = {
         'demo_title': 'Screen Recorder — DEMO',
         'demo_left': 'Demo: {n} days left',
         'demo_expired': 'Demo expired',
-        'demo_buy': 'Full version for $9.9',
+        'demo_buy': 'Full version for $9.99',
         'demo_buy_link': 'https://evgeniymamonov.com/buy.php?product=AE&lang=en&utm_source=app&utm_medium=demo_end&utm_campaign=buy',
         'copy_label': 'Copy #: {}',
         # First run — ffmpeg download

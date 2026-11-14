@@ -393,6 +393,10 @@ jobs:
           $host_ = $env:FTP_HOST; if (-not $host_) { $host_ = '141.8.192.25' }
           $host_ = ($host_ -replace '^[a-zA-Z]+://', '').Trim().TrimEnd('/')
           $user_ = $env:FTP_USER; if (-not $user_) { $user_ = 'a1306338' }
+          # Пробелы/переносы строк, случайно попавшие в секреты при вставке,
+          # ломают вход (сервер отвечает 331). Обрезаем их.
+          $user_ = $user_.Trim()
+          $pass_ = $env:FTP_PASS.Trim()
           # Заливаем в папку сайта, а не в корень FTP (корень не виден из интернета).
           $baseUrl = 'ftp://' + $host_ + '/domains/evgeniymamonov.com/public_html/'
           if (-not $baseUrl.EndsWith('/')) { $baseUrl = $baseUrl + '/' }
@@ -400,7 +404,7 @@ jobs:
           function Get-RemoteSize($remote) {
             $uri = $baseUrl + $remote
             $rq = [System.Net.FtpWebRequest]::Create($uri)
-            $rq.Credentials = New-Object System.Net.NetworkCredential($user_, $env:FTP_PASS)
+            $rq.Credentials = New-Object System.Net.NetworkCredential($user_, $pass_)
             $rq.Method = [System.Net.WebRequestMethods+Ftp]::GetFileSize
             $rq.UsePassive = $true
             $rq.Timeout = 30000
@@ -410,7 +414,7 @@ jobs:
             $size = (Get-Item $local).Length
             $uri = $baseUrl + $remote
             $rq = [System.Net.FtpWebRequest]::Create($uri)
-            $rq.Credentials = New-Object System.Net.NetworkCredential($user_, $env:FTP_PASS)
+            $rq.Credentials = New-Object System.Net.NetworkCredential($user_, $pass_)
             $rq.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
             $rq.UseBinary = $true
             $rq.UsePassive = $true
