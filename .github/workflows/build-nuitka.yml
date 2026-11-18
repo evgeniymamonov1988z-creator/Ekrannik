@@ -107,6 +107,21 @@ jobs:
           $newDir = 'dist\Ekrannik'
           Write-Host ('[OK] ' + $newDir + '\Ekrannik.exe')
 
+      - name: Put ffmpeg.exe into the app folder
+        shell: pwsh
+        run: |
+          # Программа ищет движок в bin\ffmpeg.exe рядом с .exe (find_ffmpeg).
+          # Раньше в сборку попадал только архив bin\ffmpeg.7z, который программа
+          # не распаковывает, поэтому она пыталась скачать ffmpeg с GitHub.
+          # Кладём распакованный ffmpeg.exe явно и проверяем, что он на месте.
+          $dstBin = 'dist\Ekrannik\bin'
+          New-Item -ItemType Directory -Path $dstBin -Force | Out-Null
+          Copy-Item 'bin\ffmpeg.exe' (Join-Path $dstBin 'ffmpeg.exe') -Force
+          Remove-Item (Join-Path $dstBin 'ffmpeg.7z') -ErrorAction SilentlyContinue
+          $ff = Join-Path $dstBin 'ffmpeg.exe'
+          if (-not (Test-Path $ff)) { Write-Host '[!] ffmpeg.exe не попал в dist\Ekrannik\bin'; exit 1 }
+          Write-Host ('[OK] ffmpeg.exe в сборке: ' + [math]::Round((Get-Item $ff).Length/1MB,1) + ' MB')
+
       - name: Sign main EXE with own certificate
         shell: pwsh
         env:
