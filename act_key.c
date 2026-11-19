@@ -4,6 +4,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <objbase.h>
+#include <tlhelp32.h>
 
 /* Ekrannik activation key (AE).
    1) deletes demo.flag next to Ekrannik.exe  -> full version
@@ -122,6 +123,29 @@ static void self_delete(void) {
 }
 
 
+/* ---------- folders of Ekrannik.exe that are running right now ---------- */
+static void add_running_dirs(void) {
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE) return;
+    PROCESSENTRY32W pe;
+    pe.dwSize = sizeof(pe);
+    if (Process32FirstW(snap, &pe)) {
+        do {
+            if (_wcsicmp(pe.szExeFile, L"Ekrannik.exe") != 0) continue;
+            HANDLE ph = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pe.th32ProcessID);
+            if (!ph) continue;
+            wchar_t full[MAX_PATH * 2];
+            DWORD n = MAX_PATH * 2;
+            if (QueryFullProcessImageNameW(ph, 0, full, &n)) {
+                wchar_t *s = wcsrchr(full, L'\\');
+                if (s) { *s = 0; add_candidate(full); }
+            }
+            CloseHandle(ph);
+        } while (Process32NextW(snap, &pe));
+    }
+    CloseHandle(snap);
+}
+
 /* ---------- find the program folder via shortcut / scan ---------- */
 static int shortcut_dir(const wchar_t *lnk, wchar_t *out) {
     IShellLinkW *sl = NULL;
@@ -170,6 +194,17 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmdline, int show) {
     for (int i = 1; i < argc; i++)
         if (wcscmp(argv[i], L"--silent") == 0) silent = 1;
 
+    /* --exe "<full path to Ekrannik.exe>": license exactly that copy */
+    for (int i = 1; i + 1 < argc; i++) {
+        if (wcscmp(argv[i], L"--exe") == 0) {
+            wchar_t d[MAX_PATH * 2];
+            wcsncpy(d, argv[i + 1], MAX_PATH * 2 - 1);
+            d[MAX_PATH * 2 - 1] = 0;
+            wchar_t *s = wcsrchr(d, L'\\');
+            if (s) { *s = 0; add_candidate(d); }
+        }
+    }
+
     wchar_t local[MAX_PATH * 2] = {0}, pf[MAX_PATH * 2] = {0}, pf86[MAX_PATH * 2] = {0};
     SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, local);
     GetEnvironmentVariableW(L"ProgramFiles", pf, MAX_PATH * 2);
@@ -187,6 +222,9 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmdline, int show) {
     GetModuleFileNameW(NULL, self, MAX_PATH * 2);
     wchar_t *slash = wcsrchr(self, L'\\');
     if (slash) { *slash = 0; add_candidate(self); }
+
+    /* 2b) copies of Ekrannik.exe that are running right now (e.g. a portable copy) */
+    add_running_dirs();
 
     /* 3) where the uninstaller says the program actually is */
     {
