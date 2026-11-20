@@ -56,7 +56,7 @@ static void write_license(const wchar_t *dir) {
 }
 
 /* ---------- candidate folders (dedup) ---------- */
-#define MAXCAND 12
+#define MAXCAND 64
 static wchar_t *g_cand[MAXCAND];
 static int g_n = 0;
 
@@ -185,6 +185,55 @@ static void scan_subdirs(const wchar_t *base) {
     FindClose(h);
 }
 
+/* ---------- last resort: walk all fixed/removable drives ---------- */
+static DWORD g_deadline = 0;
+
+static int skip_dir(const wchar_t *name) {
+    static const wchar_t *skip[] = {
+        L"Windows", L"$Recycle.Bin", L"System Volume Information", L"ProgramData",
+        L"Recovery", L"PerfLogs", L"MSOCache", L"Config.Msi", L"AppData"
+    };
+    for (size_t i = 0; i < sizeof(skip) / sizeof(skip[0]); i++)
+        if (_wcsicmp(name, skip[i]) == 0) return 1;
+    return 0;
+}
+
+static void scan_disk_dir(const wchar_t *dir, int depth) {
+    if (depth > 6 || g_n >= MAXCAND || GetTickCount() > g_deadline) return;
+    wchar_t pat[MAX_PATH * 3];
+    _snwprintf(pat, MAX_PATH * 3, L"%ls\\*", dir);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pat, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) continue;
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) continue; /* no junction loops */
+        if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0) continue;
+        if (skip_dir(fd.cFileName)) continue;
+        wchar_t sub[MAX_PATH * 2], exe[MAX_PATH * 2];
+        _snwprintf(sub, MAX_PATH * 2, L"%ls\\%ls", dir, fd.cFileName);
+        _snwprintf(exe, MAX_PATH * 2, L"%ls\\Ekrannik.exe", sub);
+        if (file_exists(exe)) add_candidate(sub);
+        scan_disk_dir(sub, depth + 1);
+        if (GetTickCount() > g_deadline) break;
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+}
+
+static void scan_all_drives(void) {
+    g_deadline = GetTickCount() + 120000; /* at most 2 minutes */
+    for (wchar_t d = L'C'; d <= L'Z'; d++) {
+        wchar_t root[8];
+        _snwprintf(root, 8, L"%lc:\\", d);
+        UINT t = GetDriveTypeW(root);
+        if (t != DRIVE_FIXED && t != DRIVE_REMOVABLE) continue;
+        wchar_t base[8];
+        _snwprintf(base, 8, L"%lc:", d);
+        scan_disk_dir(base, 0);
+        if (GetTickCount() > g_deadline) break;
+    }
+}
+
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmdline, int show) {
     (void)hInst; (void)hPrev; (void)cmdline; (void)show;
     int argc = 0;
@@ -261,6 +310,13 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmdline, int show) {
 
     int found = 0;
     for (int i = 0; i < g_n; i++) if (try_unlock(g_cand[i])) found = 1;
+
+    if (!found) {
+        /* nothing in the usual places -> search all drives */
+        int start = g_n;
+        scan_all_drives();
+        for (int i = start; i < g_n; i++) if (try_unlock(g_cand[i])) found = 1;
+    }
 
     if (!found) {
         if (!silent) msg2(L"Ekrannik.exe was not found.\n\n"
