@@ -139,12 +139,12 @@ jobs:
             xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
             xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
             <Identity
-              Name="MAMONOV.MAMONOVScreenRecorder"
+              Name="EvgeniyMamonov.Ekrannik"
               Version="1.0.0.0"
-              Publisher="CN=4800BA95-E8C4-43F6-8A2A-13437C0FADC5"
+              Publisher="CN=D40B7513-144C-44D5-B742-F47D1D87EAED"
               ProcessorArchitecture="x64" />
             <Properties>
-              <DisplayName>MAMONOV Screen Recorder</DisplayName>
+              <DisplayName>Ekrannik</DisplayName>
               <PublisherDisplayName>Evgeniy Mamonov</PublisherDisplayName>
               <Description>Screen Recorder by Evgeniy Mamonov — record your screen with microphone audio</Description>
               <Logo>Assets\StoreLogo150.png</Logo>
@@ -165,7 +165,7 @@ jobs:
                 uap10:RuntimeBehavior="packagedClassicApp"
                 uap10:TrustLevel="mediumIL">
                 <uap:VisualElements
-                  DisplayName="MAMONOV Screen Recorder"
+                  DisplayName="Ekrannik"
                   Description="Record your screen with microphone audio"
                   BackgroundColor="#2b2b2b"
                   Square150x150Logo="Assets\StoreLogo150.png"
