@@ -145,7 +145,7 @@ jobs:
               ProcessorArchitecture="x64" />
             <Properties>
               <DisplayName>MAMONOV Screen Recorder</DisplayName>
-              <PublisherDisplayName>МАМОНОВ</PublisherDisplayName>
+              <PublisherDisplayName>Evgeniy Mamonov</PublisherDisplayName>
               <Description>Screen Recorder by Evgeniy Mamonov — record your screen with microphone audio</Description>
               <Logo>Assets\StoreLogo150.png</Logo>
             </Properties>
